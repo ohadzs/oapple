@@ -153,8 +153,9 @@ def nts_folders(a):
     emit(nts.list_folders(), lambda fs: [print(f) for f in fs], a.json)
 
 def nts_read(a):
-    emit(nts.read(a.name), lambda n: print(f"# {n['name']}  [{n['folder']}]\n\n{n['body']}"),
-         a.json)
+    plain = (lambda n: print(n["html"])) if a.raw else \
+            (lambda n: print(f"# {n['name']}  [{n['folder']}]\n\n{n['body']}"))
+    emit(nts.read(a.name), plain, a.json)
 
 def nts_create(a):
     n = nts.create(a.name, body=a.body or "", folder=a.folder)
@@ -272,7 +273,7 @@ def build_parser() -> argparse.ArgumentParser:
     n = dom.add_parser("notes", help="Apple Notes").add_subparsers(dest="cmd", required=True)
     s = n.add_parser("list", help="list notes"); s.add_argument("--folder"); s.set_defaults(fn=nts_list)
     s = n.add_parser("folders", help="list folders"); s.set_defaults(fn=nts_folders)
-    s = n.add_parser("read", help="read a note"); s.add_argument("name"); s.set_defaults(fn=nts_read)
+    s = n.add_parser("read", help="read a note (Markdown; nesting preserved)"); s.add_argument("name"); s.add_argument("--raw", "--html", dest="raw", action="store_true", help="dump the note's HTML body verbatim"); s.set_defaults(fn=nts_read)
     s = n.add_parser("create", help="create a note"); s.add_argument("name"); s.add_argument("--body"); s.add_argument("--folder"); s.set_defaults(fn=nts_create)
     s = n.add_parser("append", help="append text to a note"); s.add_argument("name"); s.add_argument("text"); s.set_defaults(fn=nts_append)
     s = n.add_parser("delete", help="delete a note"); s.add_argument("name"); s.set_defaults(fn=nts_delete)

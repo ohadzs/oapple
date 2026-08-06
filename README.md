@@ -15,7 +15,8 @@ long-running MCP would serve stale code. CLI it is.
 
 - **reminders + calendar** → EventKit (`pyobjc-framework-EventKit`), shared `EKEventStore`.
 - **contacts** → Contacts framework (`pyobjc-framework-Contacts`).
-- **notes** → AppleScript (`osascript`); Apple ships no Notes framework.
+- **notes** → AppleScript (`osascript`); Apple ships no Notes framework. Bodies are HTML;
+  we convert them to Markdown (`oapple/html2md.py`) so nested outlines survive.
 - **system** → osascript / pmset / networksetup / pbcopy.
 - **shortcuts** → the `/usr/bin/shortcuts` CLI (escape hatch to app actions with no script dictionary).
 - **clock** → built ourselves (the Clock app isn't scriptable): `zoneinfo` world clock + detached timers.
@@ -62,7 +63,8 @@ oapple contacts delete <id>
 
 # notes
 oapple notes list
-oapple notes read "Shopping"
+oapple notes read "Shopping"          # Markdown — nested outlines keep their indentation
+oapple notes read "Shopping" --raw    # the HTML body verbatim
 oapple notes create "Ideas" --body "first line"
 oapple notes append "Ideas" "another line"
 ```

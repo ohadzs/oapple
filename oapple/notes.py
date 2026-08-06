@@ -1,11 +1,14 @@
 """I/O-free Notes core (AppleScript).
 
 Apple exposes no public framework for Notes, so this drives the Notes app via
-AppleScript (osascript). Bodies are HTML in Notes; we read the plaintext form and
-set new bodies as plain text (Notes wraps them).
+AppleScript (osascript). Bodies are HTML in Notes; we read the HTML and convert
+it to Markdown (Notes' own plaintext form throws away list nesting), and set new
+bodies as plain text (Notes wraps them).
 """
 import json
 import subprocess
+
+from .html2md import to_markdown
 
 
 def _run(script: str) -> str:
@@ -44,7 +47,11 @@ def list_notes(folder: str | None = None) -> list[dict]:
 
 
 def read(name: str) -> dict:
-    """Read a note by name (first match). Returns name, folder, plaintext body."""
+    """Read a note by name (first match).
+
+    Returns name, folder, `body` as Markdown (list nesting preserved) and `html`,
+    the verbatim body Notes stores.
+    """
     out = _run(f"""
         const app = Application('Notes');
         const matches = app.notes.whose({{name: {_esc(name)}}})();
@@ -53,13 +60,15 @@ def read(name: str) -> dict:
             JSON.stringify({{
                 id: n.id(), name: n.name(),
                 folder: n.container().name(),
-                body: n.plaintext()
+                html: n.body()
             }});
         }}
     """)
     if not out or out == "null":
         raise ValueError(f"No note named {name!r}.")
-    return json.loads(out)
+    n = json.loads(out)
+    n["body"] = to_markdown(n.get("html") or "")
+    return n
 
 
 def create(name: str, body: str = "", folder: str | None = None) -> dict:
